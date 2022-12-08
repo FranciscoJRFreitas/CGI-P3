@@ -1,5 +1,5 @@
-import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "./libs/utils.js";
-import { ortho, lookAt, flatten, vec3, vec4, rotateX, rotateY, mult, inverse} from "./libs/MV.js";
+import {buildProgramFromSources, loadShadersFromURLS, setupWebGL} from "./libs/utils.js";
+import {perspective, lookAt, flatten, vec2, vec3, vec4, rotateX, rotateY, rotateZ, mult, inverse} from "./libs/MV.js";
 import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix, multRotationX, multRotationZ} from "./libs/stack.js";
 
 import * as SPHERE from './libs/objects/sphere.js';
@@ -10,19 +10,19 @@ import * as BUNNY from './libs/objects/bunny.js';
 import * as TORUS from './libs/objects/torus.js';
 import { GUI } from './libs/dat.gui.module.js';
 
-const WORLDSCALE = 1.0; //World Scale
-
 /** @type WebGLRenderingContext */
 //Not supposed to change
 let gl;
+let mouseIsDown = false;
 let time = 0;
-let s = WORLDSCALE;
-let mView = lookAt([1.0, 0.5, 1.0], [-5.0, -2.5, -5.0], [0,1,0]);
+let mView;
 
 const camera = new function(){
-    this.Zoom = 100;
     this.Gama = 0;
     this.Theta = 0;
+    this.Fovy = 45;
+    this.Near = 1.0;
+    this.Far = 10;
 }
 
 const worldOpt = new function(){
@@ -34,8 +34,7 @@ const resetCam = {
     reset:function() {
         camera.Gama = 0;
         camera.Theta = 0;
-        mView = mult(lookAt([1.0, 0.5, 1.0], [-5.0, -2.5, -5.0], [0,1,0]), mult(rotateY(camera.Gama), rotateX(camera.Theta))); 
-        camera.Zoom = 100;
+        mView = mult(lookAt([4.0, 2.0, 4.0], [0.0, 0.0, 0.0], [0,1,0]), mult(rotateY(camera.Gama), rotateX(camera.Theta))); 
     }
 };
 
@@ -48,7 +47,8 @@ function setup(shaders)
 
     let program = buildProgramFromSources(gl, shaders["phong.vert"], shaders["phong.frag"]);
 
-    let mProjection = ortho(-aspect, aspect, -1, 1,-5,5);
+    let mProjection = perspective(camera.Fovy, aspect, camera.Near, camera.Far);
+    let mView = lookAt([4.0, 2.0, 4.0], [0.0, 0.0, 0.0], [0,1,0]);
 
     const gui = new GUI();
     
@@ -58,19 +58,20 @@ function setup(shaders)
     worldOptFolder.open();
 
     const camOptFolder = gui.addFolder('Camera');
-    camOptFolder.add(camera, "Zoom", 50, 1000).name("Zoom (%)").listen();
     var gamaCam = camOptFolder.add(camera, "Gama", -180, 180).name("Gama (º)").listen();
     var thetaCam = camOptFolder.add(camera, "Theta", -180, 180).name("Theta (º)").listen();
+    camOptFolder.add(camera, "Fovy", 30, 60).listen();
+    camOptFolder.add(camera, "Near", 0.1, 10).listen();
+    camOptFolder.add(camera, "Far", 2, 20).listen();
     camOptFolder.add(resetCam, 'reset').name("Reset Values");
     camOptFolder.open();
 
     gamaCam.onChange( function(){
-        mView = mult(lookAt([1.0, 0.5, 1.0], [-5.0, -2.5, -5.0], [0,1,0]), mult(rotateY(camera.Gama), rotateX(camera.Theta)));
+        mView = mult(lookAt([4.0, 2.0, 4.0], [0.0, 0.0, 0.0], [0,1,0]), mult(rotateY(camera.Gama), rotateX(camera.Theta)));
     });
 
     thetaCam.onChange( function(){
-        thirdPerson = false;
-        mView = mult(lookAt([1.0, 0.5, 1.0], [-5.0, -2.5, -5.0], [0,1,0]), mult(rotateY(camera.Gama), rotateX(camera.Theta)));
+        mView = mult(lookAt([4.0, 2.0, 4.0], [0.0, 0.0, 0.0], [0,1,0]), mult(rotateY(camera.Gama), rotateX(camera.Theta)));
     });
 
     mode.onChange( function(){
@@ -79,6 +80,49 @@ function setup(shaders)
         else
             worldOpt.Mode = gl.TRIANGLES;
     });
+
+    let initpos;
+    canvas.addEventListener("mousedown", function(event) {
+        mouseIsDown = true;
+        initpos = getCursorPosition(canvas, event);
+    });
+
+    let finalpos;
+    canvas.addEventListener("mouseup", function(event) {
+        mouseIsDown = false;
+        finalpos = getCursorPosition(canvas, event);
+    });
+
+
+    canvas.addEventListener("mousemove", function(event) {
+        if(mouseIsDown){
+        const pos = getCursorPosition(canvas, event);
+        if(finalpos != null){
+            pos[0] = finalpos[0];
+            pos[1] = finalpos[1];
+        } else {
+            pos[0] -= initpos[0];
+            pos[1] -= initpos[1];
+        }
+        camera.Gama > 180 ? camera.Gama = 180 : camera.Gama = pos[0] * 180;
+        camera.Theta > 180 ? camera.Theta = 180 : camera.Theta = pos[1] * 180;
+        mView = mult(lookAt([4.0, 2.0, 4.0], [0.0, 0.0, 0.0], [0,1,0]), mult(rotateY(camera.Gama),rotateX(camera.Theta)));
+        }
+    });
+    
+
+    function getCursorPosition(canvas, event) 
+    {
+        const mx = event.offsetX;
+        const my = event.offsetY;
+
+        const x = ((mx / canvas.width * 2) - 1);
+        const y = (((canvas.height - my)/canvas.height * 2) - 1);
+
+        return vec2(x,y);
+    }
+
+
 
     document.onkeydown = function(event) {
         switch(event.key) {
@@ -121,7 +165,7 @@ function setup(shaders)
         aspect = canvas.width / canvas.height;
 
         gl.viewport(0,0,canvas.width, canvas.height);
-        mProjection = ortho(-aspect, aspect, -1, 1, -5, 5);
+        mProjection = perspective(camera.Fovy, aspect, camera.Near, camera.Far);
     }
 
     function uploadModelView()
@@ -141,7 +185,7 @@ function setup(shaders)
 
     function Bunny()
     {
-        gl.uniform3fv(gl.getUniformLocation(program, "uColor"), vec3(1.0, 0.0, 1.0));
+        gl.uniform3fv(gl.getUniformLocation(program, "uColor"), vec3(1.0, 0.0, 0.0));
         pushMatrix();
             uploadModelView();
             BUNNY.draw(gl, program, worldOpt.Mode);
@@ -155,11 +199,10 @@ function setup(shaders)
             Ground();
         popMatrix();
         pushMatrix();
-        multTranslation([0.0,0.4,0.0]);
-
-        Bunny();
+            multTranslation([0.0,0.25,0.0]);
+            multScale([2.0,2.0,2.0]);
+            Bunny();
         popMatrix();
-        
     }
 
     function render()
@@ -173,9 +216,7 @@ function setup(shaders)
 
         loadMatrix(mView);
 
-        s = camera.Zoom/100 * WORLDSCALE;
         pushMatrix();
-            multScale([s,s,s]);
             World();
         popMatrix();
 
