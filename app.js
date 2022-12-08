@@ -21,8 +21,8 @@ const camera = new function(){
     this.Gama = 0;
     this.Theta = 0;
     this.Fovy = 45;
-    this.Near = 1.0;
-    this.Far = 10;
+    this.Near = 0.1;
+    this.Far = 30;
 }
 
 const worldOpt = new function(){
@@ -34,7 +34,7 @@ const resetCam = {
     reset:function() {
         camera.Gama = 0;
         camera.Theta = 0;
-        mView = mult(lookAt([4.0, 2.0, 4.0], [0.0, 0.0, 0.0], [0,1,0]), mult(rotateY(camera.Gama), rotateX(camera.Theta))); 
+        mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]), mult(rotateY(camera.Gama), rotateX(camera.Theta))); 
     }
 };
 
@@ -48,7 +48,7 @@ function setup(shaders)
     let program = buildProgramFromSources(gl, shaders["phong.vert"], shaders["phong.frag"]);
 
     let mProjection = perspective(camera.Fovy, aspect, camera.Near, camera.Far);
-    let mView = lookAt([4.0, 2.0, 4.0], [0.0, 0.0, 0.0], [0,1,0]);
+    let mView = lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]);
 
     const gui = new GUI();
     
@@ -62,16 +62,16 @@ function setup(shaders)
     var thetaCam = camOptFolder.add(camera, "Theta", -180, 180).name("Theta (º)").listen();
     camOptFolder.add(camera, "Fovy", 30, 60).listen();
     camOptFolder.add(camera, "Near", 0.1, 10).listen();
-    camOptFolder.add(camera, "Far", 2, 20).listen();
+    camOptFolder.add(camera, "Far", 2, 50).listen();
     camOptFolder.add(resetCam, 'reset').name("Reset Values");
     camOptFolder.open();
 
     gamaCam.onChange( function(){
-        mView = mult(lookAt([4.0, 2.0, 4.0], [0.0, 0.0, 0.0], [0,1,0]), mult(rotateY(camera.Gama), rotateX(camera.Theta)));
+        mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]), mult(rotateY(camera.Gama), rotateX(camera.Theta)));
     });
 
     thetaCam.onChange( function(){
-        mView = mult(lookAt([4.0, 2.0, 4.0], [0.0, 0.0, 0.0], [0,1,0]), mult(rotateY(camera.Gama), rotateX(camera.Theta)));
+        mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]), mult(rotateY(camera.Gama), rotateX(camera.Theta)));
     });
 
     mode.onChange( function(){
@@ -106,7 +106,7 @@ function setup(shaders)
         //}
         camera.Gama > 180 ? camera.Gama = 180 : camera.Gama = pos[0] * 180;
         camera.Theta > 180 ? camera.Theta = 180 : camera.Theta = pos[1] * 180;
-        mView = mult(lookAt([4.0, 2.0, 4.0], [0.0, 0.0, 0.0], [0,1,0]), mult(rotateY(camera.Gama),rotateX(camera.Theta)));
+        mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]), mult(rotateY(camera.Gama),rotateX(camera.Theta)));
         }
     });
     
@@ -200,7 +200,7 @@ function setup(shaders)
         popMatrix();
         pushMatrix();
             multTranslation([0.0,0.25,0.0]);
-            multScale([2.0,2.0,2.0]);
+            multScale([15.0,15.0,15.0]);
             Bunny();
         popMatrix();
     }
