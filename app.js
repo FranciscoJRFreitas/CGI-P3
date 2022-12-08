@@ -97,13 +97,13 @@ function setup(shaders)
     canvas.addEventListener("mousemove", function(event) {
         if(mouseIsDown){
         const pos = getCursorPosition(canvas, event);
-        if(finalpos != null){
+        /*if(finalpos != null){
             pos[0] = finalpos[0];
             pos[1] = finalpos[1];
-        } else {
+        } else {*/
             pos[0] -= initpos[0];
             pos[1] -= initpos[1];
-        }
+        //}
         camera.Gama > 180 ? camera.Gama = 180 : camera.Gama = pos[0] * 180;
         camera.Theta > 180 ? camera.Theta = 180 : camera.Theta = pos[1] * 180;
         mView = mult(lookAt([4.0, 2.0, 4.0], [0.0, 0.0, 0.0], [0,1,0]), mult(rotateY(camera.Gama),rotateX(camera.Theta)));
