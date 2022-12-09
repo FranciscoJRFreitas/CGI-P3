@@ -61,8 +61,6 @@ const material = new function(){
 
 }
 
-
-
 const worldOpt = new function(){
     this.Mode = NaN;
     this.Speed = 1;
