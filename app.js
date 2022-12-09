@@ -30,6 +30,42 @@ const worldOpt = new function(){
     this.Speed = 1;
 }
 
+const position = new function(){
+    this.x = 0;
+    this.y = 0;
+    this.z = 10;
+    this.w = 1;
+
+}
+
+const intensity = new function(){
+    this.ambient = 0;
+    this.diffuse = 0;
+    this.specular = 0;
+}
+
+const axis = new function(){
+    this.x = 0;
+    this.y = 0;
+    this.z = 0;
+}
+
+const apperture = new function(){
+    this.apperture = 0;
+}
+
+const cutoff = new function(){
+    this.cutoff  = 0;
+}
+
+const material = new function(){
+    this.Ka = 0;
+    this.Kd= 0;
+    this.Ks = 0;
+    this.shininess = 0;
+
+}
+
 const resetCam = { 
     reset:function() {
         camera.Gama = 0;
@@ -52,10 +88,14 @@ function setup(shaders)
 
     const gui = new GUI();
     
+    //Options
+
     const worldOptFolder = gui.addFolder('Options');
     var mode = worldOptFolder.add(worldOpt, "Mode", {Lines: "gl.LINES", Solid: "gl.TRIANGLES"}).setValue("gl.TRIANGLES");
     worldOpt.Mode = gl.TRIANGLES;
     worldOptFolder.open();
+
+//Camera
 
     const camOptFolder = gui.addFolder('Camera');
     var gamaCam = camOptFolder.add(camera, "Gama", -180, 180).name("Gama (º)").listen();
@@ -65,6 +105,93 @@ function setup(shaders)
     camOptFolder.add(camera, "Far", 2, 50).listen();
     camOptFolder.add(resetCam, 'reset').name("Reset Values");
     camOptFolder.open();
+
+    const eyeCam = camOptFolder.addFolder('eye');
+    const atCam = camOptFolder.addFolder('at');
+    const upCam = camOptFolder.addFolder('up');
+
+// Lights
+
+    const lightsOptFolder = gui.addFolder('Lights');
+  
+ //Lights 1
+
+    const lights1OptFolder = lightsOptFolder.addFolder('Light1');
+
+    const lights1PositionFolder = lights1OptFolder.addFolder('position');
+    lights1PositionFolder.add(position,"x",0,10).listen();
+    lights1PositionFolder.add(position,"y",0,10).listen();
+    lights1PositionFolder.add(position,"w",0,10).listen();
+    lights1PositionFolder.add(position,"z",0,10).listen();
+
+    const lights1IntensitiesFolder = lights1OptFolder.addFolder('intensities');
+    lights1IntensitiesFolder.add(intensity,"ambient",0,200).listen();
+    lights1IntensitiesFolder.add(intensity,"diffuse",0,200).listen();
+    lights1IntensitiesFolder.add(intensity,"specular",0,200).listen();
+
+    
+    const lights1AxisFolder = lights1OptFolder.addFolder('axis');
+    lights1AxisFolder.add(axis,"x",0,10).listen();
+    lights1AxisFolder.add(axis,"y",0,10).listen();
+    lights1AxisFolder.add(axis,"z",-1,10).listen();
+
+    lights1OptFolder.add(apperture,"apperture",0,200).listen();
+    lights1OptFolder.add(cutoff,"cutoff",0,200).listen();
+
+    //Lights 2
+
+    const lights2OptFolder = lightsOptFolder.addFolder('Light2');
+
+    const lights2PositionFolder = lights2OptFolder.addFolder('position');
+    lights2PositionFolder.add(position,"x",0,10).listen();
+    lights2PositionFolder.add(position,"y",0,10).listen();
+    lights2PositionFolder.add(position,"w",0,10).listen();
+    lights2PositionFolder.add(position,"z",0,10).listen();
+
+    const lights2IntensitiesFolder = lights2OptFolder.addFolder('intensities');
+    lights2IntensitiesFolder.add(intensity,"ambient",0,200).listen();
+    lights2IntensitiesFolder.add(intensity,"diffuse",0,200).listen();
+    lights2IntensitiesFolder.add(intensity,"specular",0,200).listen();
+
+    const lights2AxisFolder = lights2OptFolder.addFolder('axis');
+    lights2AxisFolder.add(axis,"x",0,10).listen();
+    lights2AxisFolder.add(axis,"y",0,10).listen();
+    lights2AxisFolder.add(axis,"z",-1,10).listen();
+
+    lights2OptFolder.add(apperture,"apperture",0,200).listen();
+    lights2OptFolder.add(cutoff,"cutoff",0,200).listen();
+    
+    //Lights 3
+
+    const lights3OptFolder = lightsOptFolder.addFolder('Light3');
+
+    const lights3PositionFolder = lights3OptFolder.addFolder('position');
+    lights3PositionFolder.add(position,"x",0,10).listen();
+    lights3PositionFolder.add(position,"y",0,10).listen();
+    lights3PositionFolder.add(position,"w",0,10).listen();
+    lights3PositionFolder.add(position,"z",0,10).listen();
+
+    const lights3IntensitiesFolder = lights3OptFolder.addFolder('intensities');
+    lights3IntensitiesFolder.add(intensity,"ambient",0,200).listen();
+    lights3IntensitiesFolder.add(intensity,"diffuse",0,200).listen();
+    lights3IntensitiesFolder.add(intensity,"specular",0,200).listen();
+
+    const lights3AxisFolder = lights3OptFolder.addFolder('axis');
+    lights3AxisFolder.add(axis,"x",0,10).listen();
+    lights3AxisFolder.add(axis,"y",0,10).listen();
+    lights3AxisFolder.add(axis,"z",-1,10).listen();
+
+    lights3OptFolder.add(apperture,"apperture",0,200).listen();
+    lights3OptFolder.add(cutoff,"cutoff",0,200).listen();
+    
+    //Material
+
+    const materialOptFolder = gui.addFolder('Material');
+
+    materialOptFolder.add(material,"Ka",0,150).listen();
+    materialOptFolder.add(material,"Kd",0,150).listen();
+    materialOptFolder.add(material,"Ks",0,200).listen();
+    materialOptFolder.add(material,"shininess",0,200).listen();
 
     gamaCam.onChange( function(){
         mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]), mult(rotateY(camera.Gama), rotateX(camera.Theta)));
