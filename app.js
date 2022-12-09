@@ -25,6 +25,44 @@ const camera = new function(){
     this.Far = 30;
 }
 
+const position = new function(){
+    this.x = 0;
+    this.y = 0;
+    this.z = 10;
+    this.w = 1;
+
+}
+
+const intensity = new function(){
+    this.ambient = 0;
+    this.diffuse = 0;
+    this.specular = 0;
+}
+
+const axis = new function(){
+    this.x = 0;
+    this.y = 0;
+    this.z = 0;
+}
+
+const apperture = new function(){
+    this.apperture = 0;
+}
+
+const cutoff = new function(){
+    this.cutoff  = 0;
+}
+
+const material = new function(){
+    this.Ka = 0;
+    this.Kd= 0;
+    this.Ks = 0;
+    this.shininess = 0;
+
+}
+
+
+
 const worldOpt = new function(){
     this.Mode = NaN;
     this.Speed = 1;
@@ -88,7 +126,11 @@ function setup(shaders)
 
     const gui = new GUI();
     
+<<<<<<< HEAD
     //Options
+=======
+//Options
+>>>>>>> 43f7c564e7618691562c3629aa5b5477f267f590
 
     const worldOptFolder = gui.addFolder('Options');
     var mode = worldOptFolder.add(worldOpt, "Mode", {Lines: "gl.LINES", Solid: "gl.TRIANGLES"}).setValue("gl.TRIANGLES");
@@ -193,6 +235,10 @@ function setup(shaders)
     materialOptFolder.add(material,"Ks",0,200).listen();
     materialOptFolder.add(material,"shininess",0,200).listen();
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 43f7c564e7618691562c3629aa5b5477f267f590
     gamaCam.onChange( function(){
         mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]), mult(rotateY(camera.Gama), rotateX(camera.Theta)));
     });
