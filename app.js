@@ -126,18 +126,12 @@ function setup(shaders)
 
     const gui = new GUI();
     
-<<<<<<< HEAD
-    //Options
-=======
-//Options
->>>>>>> 43f7c564e7618691562c3629aa5b5477f267f590
-
     const worldOptFolder = gui.addFolder('Options');
     var mode = worldOptFolder.add(worldOpt, "Mode", {Lines: "gl.LINES", Solid: "gl.TRIANGLES"}).setValue("gl.TRIANGLES");
     worldOpt.Mode = gl.TRIANGLES;
     worldOptFolder.open();
 
-//Camera
+    //Camera
 
     const camOptFolder = gui.addFolder('Camera');
     var gamaCam = camOptFolder.add(camera, "Gama", -180, 180).name("Gama (º)").listen();
@@ -152,11 +146,11 @@ function setup(shaders)
     const atCam = camOptFolder.addFolder('at');
     const upCam = camOptFolder.addFolder('up');
 
-// Lights
+    // Lights
 
     const lightsOptFolder = gui.addFolder('Lights');
   
- //Lights 1
+    //Lights 1
 
     const lights1OptFolder = lightsOptFolder.addFolder('Light1');
 
@@ -235,10 +229,6 @@ function setup(shaders)
     materialOptFolder.add(material,"Ks",0,200).listen();
     materialOptFolder.add(material,"shininess",0,200).listen();
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 43f7c564e7618691562c3629aa5b5477f267f590
     gamaCam.onChange( function(){
         mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]), mult(rotateY(camera.Gama), rotateX(camera.Theta)));
     });
