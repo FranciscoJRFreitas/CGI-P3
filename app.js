@@ -13,9 +13,15 @@ import { GUI } from './libs/dat.gui.module.js';
 /** @type WebGLRenderingContext */
 //Not supposed to change
 let gl;
-let mouseIsDown = false;
+let mouseIsDragging = false;
 let time = 0;
 let mView;
+
+const options = new function(){
+    this.Mode = NaN;
+    this.DepthTest = true;
+    this.BackfaceCulling = true;
+}
 
 const camera = new function(){
     this.Gama = 0;
@@ -60,16 +66,11 @@ const material = new function(){
     this.shininess = 0;
 }
 
-const worldOpt = new function(){
-    this.Mode = NaN;
-    this.Speed = 1;
-}
-
 const resetCam = { 
     reset:function() {
         camera.Gama = 0;
         camera.Theta = 0;
-        mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]), mult(rotateY(camera.Gama), rotateX(camera.Theta))); 
+        mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]), mult(rotateY(camera.Gama), rotateX(camera.Theta)));
     }
 };
 
@@ -87,10 +88,12 @@ function setup(shaders)
 
     const gui = new GUI();
     
-    const worldOptFolder = gui.addFolder('Options');
-    var mode = worldOptFolder.add(worldOpt, "Mode", {Lines: "gl.LINES", Solid: "gl.TRIANGLES"}).setValue("gl.TRIANGLES");
-    worldOpt.Mode = gl.TRIANGLES;
-    worldOptFolder.open();
+    const optionsFolder = gui.addFolder('Options');
+    var mode = optionsFolder.add(options, "Mode", {Lines: "gl.LINES", Solid: "gl.TRIANGLES"}).setValue("gl.TRIANGLES");
+    var DepthTest = optionsFolder.add(options, "DepthTest", true, false).name("Depth Test").listen();
+    var BackfaceCulling = optionsFolder.add(options, "BackfaceCulling", true, false).name("Backface Culling").listen();
+    options.Mode = gl.TRIANGLES;
+    optionsFolder.open();
 
     //Camera
 
@@ -199,41 +202,51 @@ function setup(shaders)
     });
 
     mode.onChange( function(){
-        if(worldOptFolder.__controllers[0].object.Mode == 'gl.LINES')
-            worldOpt.Mode = gl.LINES;
+        if(optionsFolder.__controllers[0].object.Mode == 'gl.LINES')
+            options.Mode = gl.LINES;
         else
-            worldOpt.Mode = gl.TRIANGLES;
+            options.Mode = gl.TRIANGLES;
+    });
+    
+    DepthTest.onChange( function(){
+        if(options.DepthTest)
+            gl.enable(gl.DEPTH_TEST);
+        else
+            gl.disable(gl.DEPTH_TEST);
     });
 
-    let initpos;
+    BackfaceCulling.onChange( function(){
+        if(options.BackfaceCulling)
+            gl.enable(gl.CULL_FACE);
+        else
+            gl.disable(gl.CULL_FACE);
+    });
+
+    let initpos = vec2(0,0);
     canvas.addEventListener("mousedown", function(event) {
-        mouseIsDown = true;
+        mouseIsDragging = true;
         initpos = getCursorPosition(canvas, event);
     });
 
-    let finalpos;
     canvas.addEventListener("mouseup", function(event) {
-        mouseIsDown = false;
-        finalpos = getCursorPosition(canvas, event);
+        mouseIsDragging = false;
     });
-
 
     canvas.addEventListener("mousemove", function(event) {
-        if(mouseIsDown){
         const pos = getCursorPosition(canvas, event);
-        /*if(finalpos != null){
-            pos[0] = finalpos[0];
-            pos[1] = finalpos[1];
-        } else {*/
-            pos[0] -= initpos[0];
-            pos[1] -= initpos[1];
-        //}
-        camera.Gama > 180 ? camera.Gama = 180 : camera.Gama = pos[0] * 180;
-        camera.Theta > 180 ? camera.Theta = 180 : camera.Theta = pos[1] * 180;
-        mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]), mult(rotateY(camera.Gama),rotateX(camera.Theta)));
+        if (mouseIsDragging) {
+            var dy = (pos[1] - initpos[1]) * canvas.width/canvas.height * 45;
+            var dx = (pos[0] - initpos[0]) * canvas.height/canvas.width * 360;
+            // update the latest angle
+            camera.Gama > 180 ? camera.Gama = 180 : camera.Gama += dy;
+            camera.Theta > 180 ? camera.Theta = 180 : camera.Theta += dx;
+            camera.Gama < -180 ? camera.Gama = -180 : camera.Gama += dy;
+            camera.Theta < -180 ? camera.Theta = -180 : camera.Theta += dx;
+            mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]), mult(rotateY(camera.Theta),rotateX(camera.Gama)));
         }
+        initpos[0] = pos[0];
+        initpos[1] = pos[1];
     });
-    
 
     function getCursorPosition(canvas, event) 
     {
@@ -245,8 +258,6 @@ function setup(shaders)
 
         return vec2(x,y);
     }
-
-
 
     document.onkeydown = function(event) {
         switch(event.key) {
@@ -277,7 +288,8 @@ function setup(shaders)
     PYRAMID.init(gl);
     BUNNY.init(gl);
     TORUS.init(gl);
-    gl.enable(gl.DEPTH_TEST);   // Enables Z-buffer depth test
+    gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
     
     window.requestAnimationFrame(render);
 
@@ -301,9 +313,10 @@ function setup(shaders)
     {
         gl.uniform3fv(gl.getUniformLocation(program, "uColor"), vec3(1.0, 1.0, 1.0));
         pushMatrix();
+            multTranslation([0.0,-0.25,0.0]);
             multScale([10.0, 0.5 , 10.0]);
             uploadModelView();
-            CUBE.draw(gl, program, worldOpt.Mode);
+            CUBE.draw(gl, program, options.Mode);
         popMatrix();
     }
 
@@ -312,7 +325,7 @@ function setup(shaders)
         gl.uniform3fv(gl.getUniformLocation(program, "uColor"), vec3(material.Ka[0]/255.0,material.Ka[1]/255.0,material.Ka[2]/255.0));
         pushMatrix();
             uploadModelView();
-            BUNNY.draw(gl, program, worldOpt.Mode);
+            BUNNY.draw(gl, program, options.Mode);
         popMatrix();
     }
 
@@ -322,7 +335,6 @@ function setup(shaders)
             Ground();
         popMatrix();
         pushMatrix();
-            multTranslation([0.0,0.25,0.0]);
             multScale([15.0,15.0,15.0]);
             Bunny();
         popMatrix();
@@ -330,7 +342,7 @@ function setup(shaders)
 
     function render()
     {
-        time += worldOpt.Speed;
+        time += options.Speed;
         window.requestAnimationFrame(render);
         gl.useProgram(program);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
