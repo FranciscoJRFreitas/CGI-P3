@@ -54,11 +54,10 @@ const cutoff = new function(){
 }
 
 const material = new function(){
-    this.Ka = 0;
-    this.Kd= 0;
-    this.Ks = 0;
+    this.Ka = vec3(0);
+    this.Kd= vec3(0);
+    this.Ks = vec3(0);
     this.shininess = 0;
-
 }
 
 const worldOpt = new function(){
@@ -186,10 +185,10 @@ function setup(shaders)
 
     const materialOptFolder = gui.addFolder('Material');
 
-    materialOptFolder.add(material,"Ka",0,150).listen();
-    materialOptFolder.add(material,"Kd",0,150).listen();
-    materialOptFolder.add(material,"Ks",0,200).listen();
-    materialOptFolder.add(material,"shininess",0,200).listen();
+    materialOptFolder.addColor(material,"Ka",vec3(0,0,0)).listen();
+    materialOptFolder.addColor(material,"Kd",vec3(255)).listen();
+    materialOptFolder.addColor(material,"Ks",vec3(255)).listen();
+    materialOptFolder.add(material,"shininess",0,255).listen();
 
     gamaCam.onChange( function(){
         mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]), mult(rotateY(camera.Gama), rotateX(camera.Theta)));
@@ -300,7 +299,7 @@ function setup(shaders)
 
     function Ground()
     {
-        gl.uniform3fv(gl.getUniformLocation(program, "uColor"), vec3(1.0, 1.0, 1.0)); //Grey Ground Color
+        gl.uniform3fv(gl.getUniformLocation(program, "uColor"), vec3(1.0, 1.0, 1.0));
         pushMatrix();
             multScale([10.0, 0.5 , 10.0]);
             uploadModelView();
@@ -310,13 +309,12 @@ function setup(shaders)
 
     function Bunny()
     {
-        gl.uniform3fv(gl.getUniformLocation(program, "uColor"), vec3(1.0, 0.0, 0.0));
+        gl.uniform3fv(gl.getUniformLocation(program, "uColor"), vec3(material.Ka[0]/255.0,material.Ka[1]/255.0,material.Ka[2]/255.0));
         pushMatrix();
             uploadModelView();
             BUNNY.draw(gl, program, worldOpt.Mode);
         popMatrix();
     }
-
 
     function World()
     {
