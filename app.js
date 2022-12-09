@@ -66,42 +66,6 @@ const worldOpt = new function(){
     this.Speed = 1;
 }
 
-const position = new function(){
-    this.x = 0;
-    this.y = 0;
-    this.z = 10;
-    this.w = 1;
-
-}
-
-const intensity = new function(){
-    this.ambient = 0;
-    this.diffuse = 0;
-    this.specular = 0;
-}
-
-const axis = new function(){
-    this.x = 0;
-    this.y = 0;
-    this.z = 0;
-}
-
-const apperture = new function(){
-    this.apperture = 0;
-}
-
-const cutoff = new function(){
-    this.cutoff  = 0;
-}
-
-const material = new function(){
-    this.Ka = 0;
-    this.Kd= 0;
-    this.Ks = 0;
-    this.shininess = 0;
-
-}
-
 const resetCam = { 
     reset:function() {
         camera.Gama = 0;
@@ -167,7 +131,7 @@ function setup(shaders)
     const lights1AxisFolder = lights1OptFolder.addFolder('axis');
     lights1AxisFolder.add(axis,"x",0,10).listen();
     lights1AxisFolder.add(axis,"y",0,10).listen();
-    lights1AxisFolder.add(axis,"z",-1,10).listen();
+    lights1AxisFolder.add(axis,"z",0,10).listen();
 
     lights1OptFolder.add(apperture,"apperture",0,200).listen();
     lights1OptFolder.add(cutoff,"cutoff",0,200).listen();
