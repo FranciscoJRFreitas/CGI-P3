@@ -14,84 +14,100 @@ import { GUI } from './libs/dat.gui.module.js';
 //Not supposed to change
 let gl;
 let mouseIsDragging = false;
-let time = 0;
 let mView;
 
-
-/*const camera = new function(){
-const options = new function(){
-    this.Mode = NaN;
-    this.DepthTest = true;
-    this.BackfaceCulling = true;
+let options = {
+    Mode : NaN,
+    DepthTest : true,
+    BackfaceCulling : true
 }
-
-const camera = new function(){
-
-    this.Gama = 0;
-    this.Theta = 0;
-    this.Fovy = 45;
-    this.Near = 0.1;
-    this.Far = 30;
-}*/
 
 let camera = {
     Gama : 0,
     Theta : 0,
     Fovy : 45,
     Near : 0.1,
-    Far : 30
+    Far : 60,
+    eye : [-15, 5, 0],
+    at : [0, 0, 0],
+    up : [0, 1, 0]
 }
 
-let position = {
-    x : 0,
-    y : 0,
-    z : 10,
-    w : 1
-
-}
-
-let intensity = {
+let lights = [
+    {
+    ambient : [50,0,0],
+    diffuse : [60,60,60],
+    specular : [200,200,200],
+    position : [20,-5.0,0.0,-1],
+    axis : [0.0,0.0,-1.0],
+    apperture : 10.0,
+    cutoff  : 10
+    },
+    {
     ambient : [50,0,0],
     diffuse : [50,0,0],
-    specular : [150,0,0]
-}
-
-let axis = {
-   x : 0,
-    y : 0,
-    z : 0
-}
-
-let apperture = {
-    apperture : 100
-}
-
-let cutoff = {
+    specular : [150,0,0],
+    position : [-20.0,5.0,5.0,0.0],
+    axis : [20.0,-5.0,-5.0],
+    apperture : 180.0,
     cutoff  : -1
-}
+    },
+    {
+    ambient : [75,75,100],
+    diffuse : [75,75,100],
+    specular : [150,150,175],
+    position : [0,0,10,1],
+    axis : [-5.0,-5.0,-2.0],
+    apperture : 180.0,
+    cutoff  : -1
+    }
+];
+
 
 let material = {
-    Ka : 0,
-    Kd :0,
-    Ks : 0,
+    Ka : [0,0,0],
+    Kd : [0,0,0],
+    Ks : [0,0,0],
     shininess : 0
-
 }
 
-let worldOpt = {
-   Mode : NaN,
-    Speed : 1
+let grayMaterial = {
+    Ka: [150,150,150],
+    kd: [150,150,150],
+    Ks: [200,200,200],
+    shininess : 100.0
 }
 
-/*const worldOpt = new function(){
-    this.Mode = NaN;
-    this.Speed = 1;
-}*/
+let redMaterial = {
+    Ka: [150,150,150],
+    kd: [150,150,150],
+    Ks: [200,200,200],
+    shininess : 10.0
+};
 
-const resetCam = { 
+let greenMaterial = {
+    Ka: [50,150,50],
+    kd: [50,150,50],
+    Ks: [200,200,200],
+    shininess : 100.0
+}
+
+let resetCam = { 
     reset:function() {
         camera.Gama = 0;
         camera.Theta = 0;
+        camera.Fovy = 45;
+        camera.Near = 0.1;
+        camera.Far = 30;
+        camera.eye[0] = -15;
+        camera.eye[1] = 5;
+        camera.eye[2] = 0;
+        camera.at[0] = 0;
+        camera.at[1] = 0;
+        camera.at[2] = 0;
+        camera.up[0] = 0;
+        camera.up[1] = 1;
+        camera.up[2] = 0;
         mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]), mult(rotateY(camera.Gama), rotateX(camera.Theta)));
     }
 };
@@ -111,117 +127,73 @@ function setup(shaders)
     const gui = new GUI();
     
     const optionsFolder = gui.addFolder('Options');
-    var mode = optionsFolder.add(options, "Mode", {Lines: "gl.LINES", Solid: "gl.TRIANGLES"}).setValue("gl.TRIANGLES");
-    var DepthTest = optionsFolder.add(options, "DepthTest", true, false).name("Depth Test").listen();
-    var BackfaceCulling = optionsFolder.add(options, "BackfaceCulling", true, false).name("Backface Culling").listen();
+    var mode = optionsFolder.add(options, 'Mode', {Lines: 'gl.LINES', Solid: 'gl.TRIANGLES'}).setValue('gl.TRIANGLES');
+    var DepthTest = optionsFolder.add(options, 'DepthTest', true, false).name('Depth Test').listen();
+    var BackfaceCulling = optionsFolder.add(options, 'BackfaceCulling', true, false).name('Backface Culling').listen();
     options.Mode = gl.TRIANGLES;
     optionsFolder.open();
 
     //Camera
 
     const camOptFolder = gui.addFolder('Camera');
-    var gamaCam = camOptFolder.add(camera, "Gama", -180, 180).name("Gama (º)").listen();
-    var thetaCam = camOptFolder.add(camera, "Theta", -180, 180).name("Theta (º)").listen();
-    camOptFolder.add(camera, "Fovy", 30, 60).listen();
-    camOptFolder.add(camera, "Near", 0.1, 10).listen();
-    camOptFolder.add(camera, "Far", 2, 50).listen();
-    camOptFolder.add(resetCam, 'reset').name("Reset Values");
-    camOptFolder.open();
+    camOptFolder.add(camera, 'Gama', -180, 180).name('Gama (º)').listen();
+    camOptFolder.add(camera, 'Theta', -180, 180).name('Theta (º)').listen();
 
+    camOptFolder.add(camera, 'Fovy', 30, 60).listen();
+    camOptFolder.add(camera, 'Near', 0.1, 10).listen();
+    camOptFolder.add(camera, 'Far', 2, 100).listen();
+    
     const eyeCam = camOptFolder.addFolder('eye');
+    eyeCam.add(camera.eye, 0, -50, 50).name('x').listen();
+    eyeCam.add(camera.eye, 1, -50, 50).name('y').listen();
+    eyeCam.add(camera.eye, 2, -50, 50).name('z').listen();
+
     const atCam = camOptFolder.addFolder('at');
+    atCam.add(camera.at, 0, -50, 50).step(0.1).name('x').listen();
+    atCam.add(camera.at, 1, -50, 50).step(0.1).name('y').listen();
+    atCam.add(camera.at, 2, -50, 50).step(0.1).name('z').listen();
+
     const upCam = camOptFolder.addFolder('up');
+    upCam.add(camera.up, 0, -1, 1, 0.01).name('x').listen();
+    upCam.add(camera.up, 1, -1, 1, 0.01).name('y').listen();
+    upCam.add(camera.up, 2, -1, 1, 0.01).name('z').listen();
+
+    camOptFolder.add(resetCam, 'reset').name('Reset Values');
 
     // Lights
-
     const lightsOptFolder = gui.addFolder('Lights');
-  
-    //Lights 1
 
-    const lights1OptFolder = lightsOptFolder.addFolder('Light1');
+    for(let l = 0; l < lights.length; l++) {
+        const lightslOptFolder = lightsOptFolder.addFolder('Light'+(l+1));
 
-    const lights1PositionFolder = lights1OptFolder.addFolder('position');
-    lights1PositionFolder.add(position,"x",0,10).listen();
-    lights1PositionFolder.add(position,"y",0,10).listen();
-    lights1PositionFolder.add(position,"w",0,10).listen();
-    lights1PositionFolder.add(position,"z",0,10).listen();
+        const lightslPositionFolder = lightslOptFolder.addFolder('position');
+            lightslPositionFolder.add(lights[l].position, 0).step(0.1).name('x').listen();
+            lightslPositionFolder.add(lights[l].position, 1).step(0.1).name('y').listen();
+            lightslPositionFolder.add(lights[l].position, 2).step(0.1).name('z').listen();
+            lightslPositionFolder.add(lights[l].position, 3).step(0.1).name('w').listen();
 
-    const lights1IntensitiesFolder = lights1OptFolder.addFolder('intensities');
-    lights1IntensitiesFolder.addColor(intensity,"ambient",0,200).listen();
-    lights1IntensitiesFolder.addColor(intensity,"diffuse",0,200).listen();
-    lights1IntensitiesFolder.addColor(intensity,"specular",0,200).listen();
+        const lightslIntensitiesFolder = lightslOptFolder.addFolder('intensities');
+            lightslIntensitiesFolder.addColor(lights[l], 'ambient').listen();
+            lightslIntensitiesFolder.addColor(lights[l], 'diffuse').listen();
+            lightslIntensitiesFolder.addColor(lights[l], 'specular').listen();
+        
+        const lightslAxisFolder = lightslOptFolder.addFolder('axis');
+            lightslAxisFolder.add(lights[l].axis, 0).step(0.1).name('x').listen();
+            lightslAxisFolder.add(lights[l].axis, 1).step(0.1).name('y').listen();
+            lightslAxisFolder.add(lights[l].axis, 2).step(0.1).name('z').listen();
 
-    
-    const lights1AxisFolder = lights1OptFolder.addFolder('axis');
-    lights1AxisFolder.add(axis,"x",0,10).listen();
-    lights1AxisFolder.add(axis,"y",0,10).listen();
-    lights1AxisFolder.add(axis,"z",0,10).listen();
-
-    lights1OptFolder.add(apperture,"apperture",0,200).listen();
-    lights1OptFolder.add(cutoff,"cutoff",0,200).listen();
-
-    //Lights 2
-
-    const lights2OptFolder = lightsOptFolder.addFolder('Light2');
-
-    const lights2PositionFolder = lights2OptFolder.addFolder('position');
-    lights2PositionFolder.add(position,"x",0,10).listen();
-    lights2PositionFolder.add(position,"y",0,10).listen();
-    lights2PositionFolder.add(position,"w",0,10).listen();
-    lights2PositionFolder.add(position,"z",0,10).listen();
-
-    const lights2IntensitiesFolder = lights2OptFolder.addFolder('intensities');
-    lights2IntensitiesFolder.addColor(intensity,"ambient",0,200).listen();
-    lights2IntensitiesFolder.addColor(intensity,"diffuse",0,200).listen();
-    lights2IntensitiesFolder.addColor(intensity,"specular",0,200).listen();
-
-    const lights2AxisFolder = lights2OptFolder.addFolder('axis');
-    lights2AxisFolder.add(axis,"x",0,10).listen();
-    lights2AxisFolder.add(axis,"y",0,10).listen();
-    lights2AxisFolder.add(axis,"z",-1,10).listen();
-
-    lights2OptFolder.add(apperture,"apperture",0,200).listen();
-    lights2OptFolder.add(cutoff,"cutoff",0,200).listen();
-    
-    //Lights 3
-
-    const lights3OptFolder = lightsOptFolder.addFolder('Light3');
-
-    const lights3PositionFolder = lights3OptFolder.addFolder('position');
-    lights3PositionFolder.add(position,"x",0,10).listen();
-    lights3PositionFolder.add(position,"y",0,10).listen();
-    lights3PositionFolder.add(position,"w",0,10).listen();
-    lights3PositionFolder.add(position,"z",0,10).listen();
-
-    const lights3IntensitiesFolder = lights3OptFolder.addFolder('intensities');
-    lights3IntensitiesFolder.addColor(intensity,"ambient",0,200).listen();
-    lights3IntensitiesFolder.addColor(intensity,"diffuse",0,200).listen();
-    lights3IntensitiesFolder.addColor(intensity,"specular",0,200).listen();
-
-    const lights3AxisFolder = lights3OptFolder.addFolder('axis');
-    lights3AxisFolder.add(axis,"x",0,10).listen();
-    lights3AxisFolder.add(axis,"y",0,10).listen();
-    lights3AxisFolder.add(axis,"z",-1,10).listen();
-
-    lights3OptFolder.add(apperture,"apperture",0,200).listen();
-    lights3OptFolder.add(cutoff,"cutoff",0,200).listen();
+        lightslOptFolder.add(lights[l],'apperture', 0, 180, 0.1).listen();
+        lightslOptFolder.add(lights[l],'cutoff', -1, 200, 1).listen();
+    }
     
     //Material
 
     const materialOptFolder = gui.addFolder('Material');
 
-    materialOptFolder.addColor(material,"Ka",vec3(0,0,0)).listen();
-    materialOptFolder.addColor(material,"Kd",vec3(255)).listen();
-    materialOptFolder.addColor(material,"Ks",vec3(255)).listen();
-    materialOptFolder.add(material,"shininess",0,255).listen();
-
-    gamaCam.onChange( function(){
-        mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]), mult(rotateY(camera.Gama), rotateX(camera.Theta)));
-    });
-
-    thetaCam.onChange( function(){
-        mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]), mult(rotateY(camera.Gama), rotateX(camera.Theta)));
-    });
+    materialOptFolder.addColor(material, 'Ka', vec3(255)).listen();
+    materialOptFolder.addColor(material, 'Kd', vec3(255)).listen();
+    materialOptFolder.addColor(material, 'Ks', vec3(255)).listen();
+    materialOptFolder.add(material, 'shininess', 0, 255).listen();
 
     mode.onChange( function(){
         if(optionsFolder.__controllers[0].object.Mode == 'gl.LINES')
@@ -244,6 +216,17 @@ function setup(shaders)
             gl.disable(gl.CULL_FACE);
     });
 
+    function getCursorPosition(canvas, event) 
+    {
+        const mx = event.offsetX;
+        const my = event.offsetY;
+
+        const x = ((mx / canvas.width * 2) - 1);
+        const y = (((canvas.height - my)/canvas.height * 2) - 1);
+
+        return vec2(x,y);
+    }
+
     let initpos = vec2(0,0);
     canvas.addEventListener("mousedown", function(event) {
         mouseIsDragging = true;
@@ -258,48 +241,17 @@ function setup(shaders)
         const pos = getCursorPosition(canvas, event);
         if (mouseIsDragging) {
             var dy = (pos[1] - initpos[1]) * canvas.width/canvas.height * 45;
-            var dx = (pos[0] - initpos[0]) * canvas.height/canvas.width * 360;
+            var dx = (pos[0] - initpos[0]) * canvas.height/canvas.width * 90;
             // update the latest angle
-            camera.Gama > 180 ? camera.Gama = 180 : camera.Gama += dy;
-            camera.Theta > 180 ? camera.Theta = 180 : camera.Theta += dx;
-            camera.Gama < -180 ? camera.Gama = -180 : camera.Gama += dy;
-            camera.Theta < -180 ? camera.Theta = -180 : camera.Theta += dx;
-            mView = mult(lookAt([-15, 5, 0], [0, 0, 0], [0, 1, 0]), mult(rotateY(camera.Theta),rotateX(camera.Gama)));
+            camera.Theta > 180 ? camera.Theta = 180 : camera.Theta += dy;
+            camera.Gama > 180 ? camera.Gama = 180 : camera.Gama += dx;
+            camera.Theta < -180 ? camera.Theta = -180 : camera.Theta += dy;
+            camera.Gama < -180 ? camera.Gama = -180 : camera.Gama += dx;
         }
         initpos[0] = pos[0];
         initpos[1] = pos[1];
     });
 
-    function getCursorPosition(canvas, event) 
-    {
-        const mx = event.offsetX;
-        const my = event.offsetY;
-
-        const x = ((mx / canvas.width * 2) - 1);
-        const y = (((canvas.height - my)/canvas.height * 2) - 1);
-
-        return vec2(x,y);
-    }
-
-    document.onkeydown = function(event) {
-        switch(event.key) {
-            case "ArrowUp":
-            break;
-            case "ArrowDown":
-            break;
-            case "ArrowLeft":
-            break;
-        }
-    };
-    document.onkeyup = function(event) {
-        switch(event.key) {
-            case "ArrowLeft":
-            break;
-            case " ":
-            break;
-        }
-    }
-    
     resize_canvas();
     window.addEventListener("resize", resize_canvas);
     
@@ -364,12 +316,48 @@ function setup(shaders)
 
     function render()
     {
-        time += options.Speed;
+        mProjection = perspective(camera.Fovy, aspect, camera.Near, camera.Far);
+        mView = mult(lookAt([camera.eye[0], camera.eye[1], camera.eye[2]],
+            [camera.at[0], camera.at[1], camera.at[2]], 
+            [camera.up[0], camera.up[1], camera.up[2]]),
+            mult(rotateY(camera.Gama), rotateX(camera.Theta)));
+
         window.requestAnimationFrame(render);
         gl.useProgram(program);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"), false, flatten(mProjection));
+
+        
+        const uKa = gl.getUniformLocation(program, "uMaterial.Ka");
+        gl.uniform3fv(uKa, flatten(material.Ka));
+        const uKd = gl.getUniformLocation(program, "uMaterial.Kd");
+        gl.uniform3fv(uKd, flatten(material.Kd));
+        const uKs = gl.getUniformLocation(program, "uMaterial.Ks");
+        gl.uniform3fv(uKs, flatten(material.Ks));
+        const uShininess = gl.getUniformLocation(program, "uMaterial.shininess");
+        gl.uniform1f(uShininess, material.shininess);
+
+
+        const uNLights = gl.getUniformLocation(program, "uNLights");
+        gl.uniform1f(uNLights, lights.length);
+
+        for(let l = 0; l < lights.length; l++) {
+            const uKaOfLightl = gl.getUniformLocation(program, "uLights["+ l +"].ambient");
+            gl.uniform3fv(uKaOfLightl, flatten(lights[l].ambient));
+            const uKdOfLightl = gl.getUniformLocation(program, "uLights["+ l +"].diffuse");
+            gl.uniform3fv(uKdOfLightl, flatten(lights[l].diffuse));
+            const uKsOfLightl = gl.getUniformLocation(program, "uLights["+ l +"].specular");
+            gl.uniform3fv(uKsOfLightl, flatten(lights[l].specular));
+            const uPosition = gl.getUniformLocation(program, "uLights["+ l +"].position");
+            gl.uniform4fv(uPosition, flatten(lights[l].position));
+            const uAxis = gl.getUniformLocation(program, "uLights["+ l +"].axis");
+            gl.uniform3fv(uAxis, flatten(lights[l].axis));
+            const uApperture = gl.getUniformLocation(program, "uLights["+ l +"].apperture");
+            gl.uniform1f(uApperture, lights[l].apperture);
+            const uCutoff = gl.getUniformLocation(program, "uLights["+ l +"].cutoff");
+            gl.uniform1f(uCutoff, lights[l].cutoff);
+        }
 
         loadMatrix(mView);
 
