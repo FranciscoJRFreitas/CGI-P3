@@ -17,6 +17,8 @@ let mouseIsDragging = false;
 let time = 0;
 let mView;
 
+
+/*const camera = new function(){
 const options = new function(){
     this.Mode = NaN;
     this.DepthTest = true;
@@ -24,47 +26,67 @@ const options = new function(){
 }
 
 const camera = new function(){
+
     this.Gama = 0;
     this.Theta = 0;
     this.Fovy = 45;
     this.Near = 0.1;
     this.Far = 30;
+}*/
+
+let camera = {
+    Gama : 0,
+    Theta : 0,
+    Fovy : 45,
+    Near : 0.1,
+    Far : 30
 }
 
-const position = new function(){
-    this.x = 0;
-    this.y = 0;
-    this.z = 10;
-    this.w = 1;
+let position = {
+    x : 0,
+    y : 0,
+    z : 10,
+    w : 1
 
 }
 
-const intensity = new function(){
-    this.ambient = 0;
-    this.diffuse = 0;
-    this.specular = 0;
+let intensity = {
+    ambient : [50,0,0],
+    diffuse : [50,0,0],
+    specular : [150,0,0]
 }
 
-const axis = new function(){
-    this.x = 0;
-    this.y = 0;
-    this.z = 0;
+let axis = {
+   x : 0,
+    y : 0,
+    z : 0
 }
 
-const apperture = new function(){
-    this.apperture = 0;
+let apperture = {
+    apperture : 100
 }
 
-const cutoff = new function(){
-    this.cutoff  = 0;
+let cutoff = {
+    cutoff  : -1
 }
 
-const material = new function(){
-    this.Ka = vec3(0);
-    this.Kd= vec3(0);
-    this.Ks = vec3(0);
-    this.shininess = 0;
+let material = {
+    Ka : 0,
+    Kd :0,
+    Ks : 0,
+    shininess : 0
+
 }
+
+let worldOpt = {
+   Mode : NaN,
+    Speed : 1
+}
+
+/*const worldOpt = new function(){
+    this.Mode = NaN;
+    this.Speed = 1;
+}*/
 
 const resetCam = { 
     reset:function() {
@@ -125,9 +147,9 @@ function setup(shaders)
     lights1PositionFolder.add(position,"z",0,10).listen();
 
     const lights1IntensitiesFolder = lights1OptFolder.addFolder('intensities');
-    lights1IntensitiesFolder.add(intensity,"ambient",0,200).listen();
-    lights1IntensitiesFolder.add(intensity,"diffuse",0,200).listen();
-    lights1IntensitiesFolder.add(intensity,"specular",0,200).listen();
+    lights1IntensitiesFolder.addColor(intensity,"ambient",0,200).listen();
+    lights1IntensitiesFolder.addColor(intensity,"diffuse",0,200).listen();
+    lights1IntensitiesFolder.addColor(intensity,"specular",0,200).listen();
 
     
     const lights1AxisFolder = lights1OptFolder.addFolder('axis');
@@ -149,9 +171,9 @@ function setup(shaders)
     lights2PositionFolder.add(position,"z",0,10).listen();
 
     const lights2IntensitiesFolder = lights2OptFolder.addFolder('intensities');
-    lights2IntensitiesFolder.add(intensity,"ambient",0,200).listen();
-    lights2IntensitiesFolder.add(intensity,"diffuse",0,200).listen();
-    lights2IntensitiesFolder.add(intensity,"specular",0,200).listen();
+    lights2IntensitiesFolder.addColor(intensity,"ambient",0,200).listen();
+    lights2IntensitiesFolder.addColor(intensity,"diffuse",0,200).listen();
+    lights2IntensitiesFolder.addColor(intensity,"specular",0,200).listen();
 
     const lights2AxisFolder = lights2OptFolder.addFolder('axis');
     lights2AxisFolder.add(axis,"x",0,10).listen();
@@ -172,9 +194,9 @@ function setup(shaders)
     lights3PositionFolder.add(position,"z",0,10).listen();
 
     const lights3IntensitiesFolder = lights3OptFolder.addFolder('intensities');
-    lights3IntensitiesFolder.add(intensity,"ambient",0,200).listen();
-    lights3IntensitiesFolder.add(intensity,"diffuse",0,200).listen();
-    lights3IntensitiesFolder.add(intensity,"specular",0,200).listen();
+    lights3IntensitiesFolder.addColor(intensity,"ambient",0,200).listen();
+    lights3IntensitiesFolder.addColor(intensity,"diffuse",0,200).listen();
+    lights3IntensitiesFolder.addColor(intensity,"specular",0,200).listen();
 
     const lights3AxisFolder = lights3OptFolder.addFolder('axis');
     lights3AxisFolder.add(axis,"x",0,10).listen();
