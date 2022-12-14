@@ -1,6 +1,6 @@
 import {buildProgramFromSources, loadShadersFromURLS, setupWebGL} from "./libs/utils.js";
-import {perspective, lookAt, flatten, vec2, vec3, vec4, rotateX, rotateY, rotateZ, mult, inverse, normalMatrix} from "./libs/MV.js";
-import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix, multRotationX, multRotationZ} from "./libs/stack.js";
+import {perspective, lookAt, flatten, vec2, vec3, rotateX, rotateY, rotateZ, mult, normalMatrix} from "./libs/MV.js";
+import {modelView, loadMatrix, multScale, multTranslation, popMatrix, pushMatrix} from "./libs/stack.js";
 
 import * as SPHERE from './libs/objects/sphere.js';
 import * as CUBE from './libs/objects/cube.js';
