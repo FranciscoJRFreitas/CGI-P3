@@ -53,7 +53,7 @@ void main()
 
             if(uLights[i].type == 1) // this is, if uLights[i].position.w == 0 (Directional light)
                 L = normalize((mViewNormals * uLights[i].position).xyz);
-            if(uLights[i].type == 0 || uLights[i].type == 2)
+            else
                 L = normalize((mView * uLights[i].position).xyz - fPosition);
 
             vec3 V = normalize(fViewer);
@@ -64,34 +64,31 @@ void main()
             vec3 diffuseColor = uLights[i].diffuse/255.0 * material.Kd/255.0;
             vec3 specularColor = uLights[i].specular/255.0 * material.Ks/255.0;
 
-            float intensity;
             if(uLights[i].type == 1)
                 L = normalize((mViewNormals*uLights[i].position).xyz);
-            else {
+            else
                 L = normalize((mView*uLights[i].position).xyz - fPosition);
-            }
-                
+            
+            float intensity;
             if(uLights[i].type == 2) {
-                float angle = acos(dot(L, -uLights[i].axis)/length(L) * length(-uLights[i].axis));
-                if(angle <= radians(uLights[i].apperture))
+                float dotLVector = dot(L, -uLights[i].axis)/length(L) * length(-uLights[i].axis);
+                float angle = acos(dotLVector);
+                intensity = 0.0;
+                if(radians(uLights[i].apperture) > angle)
                     intensity = pow(cos(angle), uLights[i].cutoff);
-                else
-                    intensity = 0.0;
             }
             else {
                 intensity = 1.0;
             }
         
-            float diffuseFactor = max(dot(L,N), 0.0);
-            vec3 diffuse = diffuseFactor * diffuseColor * intensity;
-            float specularFactor = pow(max(dot(N,H), 0.0), uMaterial.shininess) ;
-            vec3 specular = specularFactor * specularColor * intensity;
+            vec3 diffuse = max(dot(L,N), 0.0) * diffuseColor * intensity;
+            vec3 specular = pow(max(dot(N,H), 0.0), uMaterial.shininess) * specularColor * intensity;
 
             if(dot(L,N) < 0.0) {
                 specular = vec3(0.0);
             }
 
-            gl_FragColor += vec4(ambientColor + diffuse + specular, 1);
+            gl_FragColor += vec4(ambientColor + diffuse + specular, 1.0);
         }
     }
 }
