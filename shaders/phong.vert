@@ -14,7 +14,7 @@ varying vec3 fViewer; // View vector in camera space
 void main() 
 {
     fNormal = (mNormals * vNormal).xyz;
-    fViewer = vec3(0.0,0.0,1.0); 
     fPosition = (mModelView * vPosition).xyz;
+    fViewer = -fPosition; // Perspective projection
     gl_Position = mProjection * mModelView * vPosition;
 }

@@ -24,13 +24,20 @@ const BUNNY_SIZE = 15.0;
 //Other objects measurements
 const DEFAULT_SIZE = 2.0;
 
+//Object colors
+const MAT_AFFECTED_COLOR = vec3();
+const PLATFORM_COLOR = vec3(135.0, 206.0, 250.0); //Sky blue
+const CUBE_COLOR = vec3(255.0, 127.5, 80.0); //Terracotta
+const CYLINDER_COLOR = vec3(128.0, 128.0, 0.0); //Olive
+const TORUS_COLOR = vec3(250.0, 200.0, 200.0); //Salmon
+
 //Camera Movement
 //Adjust natural camera movement
 const MVIEW_LIM = 0.25;
-
 //Rotation angle limit
-const ROT_LIM = 180;
-//Attenuant sensivity factor
+const CAM_SPINS = 1;
+const ROT_LIM = CAM_SPINS * 180; // 180 means one spin (rotation from -180 to 180)
+//Sensivity factor Attenuant
 const SENSE_FACTOR = 45;
 
 //Variables
@@ -43,10 +50,11 @@ let options = {
     Mode : NaN,
     DepthTest : true,
     BackfaceCulling : true,
-    mouseSensivity : 2
+    mouseSensivity : 2,
 }
 
 let camera = {
+    Agility : CAM_SPINS,
     Zoom : 100,
     Gama : 0,
     Theta : 0,
@@ -65,8 +73,8 @@ let lights = [
     specular : [200,200,200],
     position : [1.0,2.0,1.0,1.0],
     axis : [0.0,0.0,-1.0],
-    apperture : 10.0,
-    cutoff : 10,
+    apperture : 0.0,
+    cutoff : -1,
     onState : true,
     type : 'Point'
     },
@@ -76,7 +84,7 @@ let lights = [
     specular : [150,0,0],
     position : [-10.0,5.0,5.0,0.0],
     axis : [10.0,-5.0,-5.0],
-    apperture : 180.0,
+    apperture : 0.0,
     cutoff : -1,
     onState : false,
     type : 'Directional'
@@ -85,10 +93,10 @@ let lights = [
     ambient : [75,75,100],
     diffuse : [75,75,100],
     specular : [150,150,175],
-    position : [0,1,10,1],
-    axis : [-5.0,-5.0,-2.0],
-    apperture : 180.0,
-    cutoff : -1,
+    position : [0,3.0,0.0,0.0],
+    axis : [0.0, 0.0, -1.0],
+    apperture : 15.0,
+    cutoff : 30,
     onState : false,
     type : 'Spotlight'
     }
@@ -138,6 +146,7 @@ let matSamples = [
 
 let resetCam = { 
     reset:function() {
+        camera.Agility = CAM_SPINS;
         camera.Gama = 0;
         camera.Theta = 0;
         camera.Fovy = 45;
@@ -182,9 +191,10 @@ function setup(shaders)
 
     //Camera
     const camOptFolder = gui.addFolder('Camera');
-    camOptFolder.add(camera, "Zoom", 50, 1000).name("Zoom (%)").listen();
-    camOptFolder.add(camera, 'Gama', -180, 180).name('Gama (º)').listen();
-    camOptFolder.add(camera, 'Theta', -180, 180).name('Theta (º)').listen();
+    camOptFolder.add(camera, "Agility", 1, 5).name('Max Rotations').listen();
+    camOptFolder.add(camera, "Zoom", 50, 1000).name('Zoom (%)').listen();
+    camOptFolder.add(camera, 'Gama', -ROT_LIM, ROT_LIM).name('Gama (º)').listen();
+    camOptFolder.add(camera, 'Theta', -ROT_LIM, ROT_LIM).name('Theta (º)').listen();
 
     camOptFolder.add(camera, 'Fovy', 30, 60).listen();
     camOptFolder.add(camera, 'Near', 0.1, 10).listen();
@@ -210,67 +220,90 @@ function setup(shaders)
     // Lights
     const lightsOptFolder = gui.addFolder('Lights');
 
+    var lightslPositionFolder = [];
     for(let l = 0; l < lights.length; l++) {
+        let lightMenu = {
+            type: lights[l].type
+        };
         const lightslOptFolder = lightsOptFolder.addFolder('Light'+(l+1));
-
         lightslOptFolder.add(lights[l], 'onState', true, false).name('Activated').listen();
 
-        if(lights[l].type == 'Point') {
-            const lightslPositionFolder = lightslOptFolder.addFolder('position');
-                lightslPositionFolder.add(lights[l].position, 0).step(0.1).name('x').listen();
-                lightslPositionFolder.add(lights[l].position, 1).step(0.1).name('y').listen();
-                lightslPositionFolder.add(lights[l].position, 2).step(0.1).name('z').listen();
-                var w = lightslPositionFolder.add(lights[l].position, 3, 0, 1).step(0.1).name('w').listen();
-                w.domElement.style.pointerEvents = "none"
-                w.domElement.style.opacity = 0.3;
-        } else if(lights[l].type == 'Directional') {
-            const lightslDirectionFolder = lightslOptFolder.addFolder('direction');
-                lightslDirectionFolder.add(lights[l].position, 0).step(0.1).name('x').listen();
-                lightslDirectionFolder.add(lights[l].position, 1).step(0.1).name('y').listen();
-                lightslDirectionFolder.add(lights[l].position, 2).step(0.1).name('z').listen();
-                var w = lightslDirectionFolder.add(lights[l].position, 3, 0, 1).step(0.1).name('w').listen();
-                w.domElement.style.pointerEvents = "none"
-                w.domElement.style.opacity = 0.3;
-        } else {
-            const lightslPositionFolder = lightslOptFolder.addFolder('position');
-                lightslPositionFolder.add(lights[l].position, 0).step(0.1).name('x').listen();
-                lightslPositionFolder.add(lights[l].position, 1).step(0.1).name('y').listen();
-                lightslPositionFolder.add(lights[l].position, 2).step(0.1).name('z').listen();
-                lightslPositionFolder.add(lights[l].position, 3, 0, 1).step(0.1).name('w').listen();
+        var lMenu = lightslOptFolder.add(lightMenu, 'type',
+            {Point: 'Point', Directional: 'Directional', Spotlight: 'Spotlight'}).name("Type").listen();
 
-            const lightslIntensitiesFolder = lightslOptFolder.addFolder('intensities');
-                lightslIntensitiesFolder.addColor(lights[l], 'ambient').listen();
-                lightslIntensitiesFolder.addColor(lights[l], 'diffuse').listen();
-                lightslIntensitiesFolder.addColor(lights[l], 'specular').listen();
-        
-            const lightslAxisFolder = lightslOptFolder.addFolder('axis');
-                lightslAxisFolder.add(lights[l].axis, 0).step(0.1).name('x').listen();
-                lightslAxisFolder.add(lights[l].axis, 1).step(0.1).name('y').listen();
-                lightslAxisFolder.add(lights[l].axis, 2).step(0.1).name('z').listen();
+            lightslPositionFolder[l] = lightslOptFolder.addFolder('position');
+            lightslPositionFolder[l].add(lights[l].position, 0).step(0.1).name('x').listen();
+            lightslPositionFolder[l].add(lights[l].position, 1).step(0.1).name('y').listen();
+            lightslPositionFolder[l].add(lights[l].position, 2).step(0.1).name('z').listen();
+            var w = lightslPositionFolder[l].add(lights[l].position, 3, -1.0, 1.0).step(0.1).name('w').listen();
+            lightslPositionFolder[l] = {folder: lightslPositionFolder[l], w: w}; //To adjust W changeability
 
-            lightslOptFolder.add(lights[l],'apperture', 0, 180, 0.1).listen();
-            lightslOptFolder.add(lights[l],'cutoff', -1, 200, 1).listen();
+        const lightslIntensitiesFolder = lightslOptFolder.addFolder('intensities');
+            lightslIntensitiesFolder.addColor(lights[l], 'ambient').listen();
+            lightslIntensitiesFolder.addColor(lights[l], 'diffuse').listen();
+            lightslIntensitiesFolder.addColor(lights[l], 'specular').listen();
+    
+        const lightslAxisFolder = lightslOptFolder.addFolder('axis');
+            lightslAxisFolder.add(lights[l].axis, 0).step(0.1).name('x').listen();
+            lightslAxisFolder.add(lights[l].axis, 1).step(0.1).name('y').listen();
+            lightslAxisFolder.add(lights[l].axis, 2).step(0.1).name('z').listen();
+
+        const lightsAppertCutOffFolder = lightslOptFolder.addFolder('Apperture/Cut off');
+            lightsAppertCutOffFolder.add(lights[l],'apperture', 0, 180, 0.1).listen();
+            lightsAppertCutOffFolder.add(lights[l],'cutoff', 0, 100, 1).listen();
+
+        if(lights[l].type == 'Point' || lights[l].type == 'Directional'){
+            lightslAxisFolder.hide();
+            lightsAppertCutOffFolder.hide();
+            lightslPositionFolder[l].w.domElement.style.pointerEvents = "none";
+            lightslPositionFolder[l].w.domElement.style.opacity = 0.4;
+        }
+        if (lights[l].type == 'Directional') {
+            lightslPositionFolder[l].folder.name = 'direction';
         }
 
-        if(lights[l].type != 'Spotlight') {
-            const lightslIntensitiesFolder = lightslOptFolder.addFolder('intensities');
-                lightslIntensitiesFolder.addColor(lights[l], 'ambient').listen();
-                lightslIntensitiesFolder.addColor(lights[l], 'diffuse').listen();
-                lightslIntensitiesFolder.addColor(lights[l], 'specular').listen();
-        }        
+        lMenu.onChange(function(value) {
+            lights[l].type = value;
+            if(value == 'Point'){
+                lights[l].position[3] = 1.0; //Update w value on change
+                lightslPositionFolder[l].folder.name = 'position';
+                lightslPositionFolder[l].w.domElement.style.pointerEvents = "none";
+                lightslPositionFolder[l].w.domElement.style.opacity = 0.4;
+                lightslPositionFolder[l].folder.show();
+                lightslAxisFolder.hide();
+                lightsAppertCutOffFolder.hide();
+            } else if(value == 'Directional') {
+                lightslPositionFolder[l].folder.name = 'direction';
+                lightslPositionFolder[l].w.domElement.style.pointerEvents = "none";
+                lightslPositionFolder[l].w.domElement.style.opacity = 0.4;
+                lights[l].position[3] = 0.0; //Update w value on change
+                lightslPositionFolder[l].folder.show();
+                lightslAxisFolder.hide();
+                lightsAppertCutOffFolder.hide();
+            } else if(value == 'Spotlight'){
+                lightslPositionFolder[l].folder.name = 'position';
+                lightslPositionFolder[l].w.domElement.style.pointerEvents = "auto";
+                lightslPositionFolder[l].w.domElement.style.opacity = 1.0;
+                lightslPositionFolder[l].folder.show();
+                lightslAxisFolder.show();
+                lightsAppertCutOffFolder.show();
+            }
+        });
+                
     }
     
     //Material
     const materialOptFolder = gui.addFolder('Material');
     let inc = 0; //To facilitate addition to the menu
-    var menu = materialOptFolder.add(matMenu, 'color',
-    {Gray: inc, Red: ++inc, Green: ++inc, Blue: ++inc}).setValue('-1').name("Samples").listen();
+    var mMenu = materialOptFolder.add(matMenu, 'color',
+    {Gray: inc, Red: ++inc, Green: ++inc, Blue: ++inc} //Add sample material by => Color: ++inc after giving values in matSamples[]
+    ).setValue('-1').name("Samples").listen();
     materialOptFolder.addColor(material, 'Ka', vec3(255)).listen();
     materialOptFolder.addColor(material, 'Kd', vec3(255)).listen();
     materialOptFolder.addColor(material, 'Ks', vec3(255)).listen();
     materialOptFolder.add(material, 'shininess', 0, 100).listen();
 
-    menu.onFinishChange(function(value) {
+    mMenu.onFinishChange(function(value) {
         material.Ka = matSamples[value].Ka;
         material.Kd = matSamples[value].Kd;
         material.Ks = matSamples[value].Ks;
@@ -324,10 +357,10 @@ function setup(shaders)
             var dy = (pos[1] - initMousePos[1]) * options.mouseSensivity * SENSE_FACTOR/2;
             var dx = (pos[0] - initMousePos[0]) * options.mouseSensivity * SENSE_FACTOR;
             // update the latest angle
-            camera.Theta > ROT_LIM ? camera.Theta = ROT_LIM : camera.Theta -= dy;
-            camera.Theta < -ROT_LIM ? camera.Theta = -ROT_LIM : camera.Theta -= dy;
-            camera.Gama < -ROT_LIM ? camera.Gama = -ROT_LIM : camera.Gama += dx;
-            camera.Gama > ROT_LIM ? camera.Gama = ROT_LIM : camera.Gama += dx;
+            camera.Theta > ROT_LIM * camera.Agility ? camera.Theta = ROT_LIM * camera.Agility : camera.Theta -= dy;
+            camera.Theta < -ROT_LIM * camera.Agility ? camera.Theta = -ROT_LIM * camera.Agility : camera.Theta -= dy;
+            camera.Gama < -ROT_LIM * camera.Agility ? camera.Gama = -ROT_LIM * camera.Agility : camera.Gama += dx;
+            camera.Gama > ROT_LIM * camera.Agility ? camera.Gama = ROT_LIM * camera.Agility : camera.Gama += dx;
         }
         initMousePos[0] = pos[0];
         initMousePos[1] = pos[1];
@@ -366,7 +399,7 @@ function setup(shaders)
 
     function Platform()
     {
-        gl.uniform3fv(gl.getUniformLocation(program, "uColor"), vec3(135.0, 206.0, 250.0));
+        gl.uniform3fv(gl.getUniformLocation(program, "uColor"), PLATFORM_COLOR);
         pushMatrix();
             multTranslation([0.0, -PLATFORM_HEIGHT/2, 0.0]);
             multScale([PLATFORM_SIDE, PLATFORM_HEIGHT, PLATFORM_SIDE]);
@@ -377,7 +410,7 @@ function setup(shaders)
 
     function Bunny()
     {
-        gl.uniform3fv(gl.getUniformLocation(program, "uColor"), vec3(0.0,0.0,0.0));
+        gl.uniform3fv(gl.getUniformLocation(program, "uColor"), MAT_AFFECTED_COLOR);
         pushMatrix();
             multTranslation([PLATFORM_SIDE/5, 0.0, PLATFORM_SIDE/5]);
             multScale([BUNNY_SIZE, BUNNY_SIZE, BUNNY_SIZE]);
@@ -388,7 +421,7 @@ function setup(shaders)
 
     function Cube()
     {
-        gl.uniform3fv(gl.getUniformLocation(program, "uColor"), vec3(255.0, 127.5, 80.0));
+        gl.uniform3fv(gl.getUniformLocation(program, "uColor"), CUBE_COLOR);
         pushMatrix();
             multTranslation([-PLATFORM_SIDE/5, DEFAULT_SIZE/2, -PLATFORM_SIDE/5]);
             multScale([DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE]);
@@ -399,7 +432,7 @@ function setup(shaders)
 
     function Cylinder()
     {
-        gl.uniform3fv(gl.getUniformLocation(program, "uColor"), vec3(128.0, 128.0, 0.0));
+        gl.uniform3fv(gl.getUniformLocation(program, "uColor"), CYLINDER_COLOR);
         pushMatrix();
             multTranslation([PLATFORM_SIDE/5, DEFAULT_SIZE/2, -PLATFORM_SIDE/5]);
             multScale([DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE]);
@@ -410,7 +443,7 @@ function setup(shaders)
 
     function Torus()
     {
-        gl.uniform3fv(gl.getUniformLocation(program, "uColor"), vec3(250.0, 200.0, 200.0));
+        gl.uniform3fv(gl.getUniformLocation(program, "uColor"), TORUS_COLOR);
         pushMatrix();
             multTranslation([-PLATFORM_SIDE/5, DEFAULT_SIZE/5, PLATFORM_SIDE/5]);
             multScale([DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE]);
@@ -470,7 +503,7 @@ function setup(shaders)
             gl.uniform1f(gl.getUniformLocation(program, "uLights["+ l +"].cutoff"), lights[l].cutoff);
             gl.uniform1i(gl.getUniformLocation(program, "uLights["+ l +"].onState"), lights[l].onState == true ? 1 : 0);
             gl.uniform1i(gl.getUniformLocation(program, "uLights["+ l +"].type"), 
-            lights[l].type == 'Point' ? 0 : lights[l].type == 'Directional' ? 1 : 2            );
+            lights[l].type == 'Point' ? 0 : lights[l].type == 'Directional' ? 1 : 2);
         }
 
         loadMatrix(mView);

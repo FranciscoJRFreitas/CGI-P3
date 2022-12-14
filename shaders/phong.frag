@@ -36,47 +36,62 @@ uniform LightInfo uLights[MAX_LIGHTS]; // The array of lights present in the sce
 uniform MaterialInfo uMaterial;        // The material of the object being drawn
 uniform vec3 uColor;
 
-
 void main() 
 {
-    MaterialInfo material = uMaterial;
-    if(vec3(0.0) != uColor){
+    MaterialInfo material = uMaterial; //Make material changes to Bunny only
+    if(uColor != vec3(0.0)) {
         material.Ka = uColor;
         material.Kd = uColor;
         material.Ks = uColor;
         material.shininess = 50.0;
     }
+
     for(int i=0; i<MAX_LIGHTS; i++) {
         if(i == uNLights) break;
         if(uLights[i].onState == 1) {
             vec3 L;
 
-            if(uLights[i].type == 1) // this is, if uLights[i].position.w == 0
+            if(uLights[i].type == 1) // this is, if uLights[i].position.w == 0 (Directional light)
                 L = normalize((mViewNormals * uLights[i].position).xyz);
-            else
+            if(uLights[i].type == 0 || uLights[i].type == 2)
                 L = normalize((mView * uLights[i].position).xyz - fPosition);
 
             vec3 V = normalize(fViewer);
             vec3 N = normalize(fNormal);
             vec3 H = normalize(L+V);
 
-         //   float angle = acos(dot(L, -uLights[i].axis)/length(L) * length(-uLights[i].axis));
-         //   float x = pow(cos(angle), uLights[i].cutoff);
-
             vec3 ambientColor = uLights[i].ambient/255.0 * material.Ka/255.0;
             vec3 diffuseColor = uLights[i].diffuse/255.0 * material.Kd/255.0;
             vec3 specularColor = uLights[i].specular/255.0 * material.Ks/255.0;
 
+            float intensity;
+            if(uLights[i].type == 1)
+                L = normalize((mViewNormals*uLights[i].position).xyz);
+            else {
+                L = normalize((mView*uLights[i].position).xyz - fPosition);
+            }
+                
+            if(uLights[i].type == 2) {
+                float angle = acos(dot(L, -uLights[i].axis)/length(L) * length(-uLights[i].axis));
+                if(angle <= radians(uLights[i].apperture))
+                    intensity = pow(cos(angle), uLights[i].cutoff);
+                else
+                    intensity = 0.0;
+            }
+            else {
+                intensity = 1.0;
+            }
+        
             float diffuseFactor = max(dot(L,N), 0.0);
-            vec3 diffuse = diffuseFactor * diffuseColor;
-            float specularFactor = pow(max(dot(N,H), 0.0), material.shininess);
-            vec3 specular = specularFactor * specularColor;
+            vec3 diffuse = diffuseFactor * diffuseColor * intensity;
+            float specularFactor = pow(max(dot(N,H), 0.0), uMaterial.shininess) ;
+            vec3 specular = specularFactor * specularColor * intensity;
 
             if(dot(L,N) < 0.0) {
-                specular = vec3(0.0, 0.0, 0.0);
+                specular = vec3(0.0);
             }
 
-            gl_FragColor += vec4(ambientColor + diffuse + specular, 1.0);
+            gl_FragColor += vec4(ambientColor + diffuse + specular, 1);
         }
     }
 }
