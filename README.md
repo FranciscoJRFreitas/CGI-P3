@@ -21,4 +21,4 @@ CGI university subject project 3
 
 ## Screenshots
 
-![This is an image]
+![Sample image](/P3.png)
