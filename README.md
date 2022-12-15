@@ -1,7 +1,7 @@
 ## CGI-P3
 CGI university subject project 3
 # WebGL Lighting and Materials
-## [Introduction](docs/READ.md)
+## [Introduction]
   This project is a WebGL application that showcases different lighting and materials applied to 3D objects. The application allows the user to manipulate the objects, as well as the camera, to explore the effects of different lighting and materials on the objects.
 
 ## Features
