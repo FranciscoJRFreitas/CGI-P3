@@ -29,7 +29,7 @@ varying vec3 fViewer;
 
 uniform mat4 mModelView;
 uniform mat4 mView;
-uniform mat4 mViewNormals; 
+uniform mat4 mViewNormals;
 
 uniform int uNLights; // Effective number of lights used
 uniform LightInfo uLights[MAX_LIGHTS]; // The array of lights present in the scene
@@ -49,8 +49,8 @@ void main()
     for(int i=0; i<MAX_LIGHTS; i++) {
         if(i == uNLights) break;
         if(uLights[i].onState == 1) {
-            vec3 L;
 
+            vec3 L;
             if(uLights[i].type == 1) // this is, if uLights[i].position.w == 0 (Directional light)
                 L = normalize((mViewNormals * uLights[i].position).xyz);
             else
@@ -64,11 +64,6 @@ void main()
             vec3 diffuseColor = uLights[i].diffuse/255.0 * material.Kd/255.0;
             vec3 specularColor = uLights[i].specular/255.0 * material.Ks/255.0;
 
-            if(uLights[i].type == 1)
-                L = normalize((mViewNormals*uLights[i].position).xyz);
-            else
-                L = normalize((mView*uLights[i].position).xyz - fPosition);
-            
             float intensity;
             if(uLights[i].type == 2) {
                 float dotLVector = dot(L, -uLights[i].axis)/length(L) * length(-uLights[i].axis);

@@ -11,7 +11,7 @@ varying vec3 fPosition; // Normal vector in camera space
 varying vec3 fNormal;
 varying vec3 fViewer; // View vector in camera space
 
-void main() 
+void main()
 {
     fNormal = (mNormals * vNormal).xyz;
     fPosition = (mModelView * vPosition).xyz;

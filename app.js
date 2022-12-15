@@ -102,15 +102,15 @@ let lights = [
     }
 ];
 
+let matMenu = {
+    color : -1
+}
+
 let material = {
     Ka : [150,150,150],
     Kd : [150,150,150],
     Ks : [200,200,200],
     shininess : 75.0,
-}
-
-let matMenu = {
-    color : -1
 }
 
 let matSamples = [
@@ -464,6 +464,7 @@ function setup(shaders)
     function render()
     {
         mProjection = perspective(camera.Fovy, aspect, camera.Near, camera.Far);
+        
         if(mView[0][0] < MVIEW_LIM || mView[0][0] > -MVIEW_LIM) { //So that the rotation feels natural
             mView = mult(lookAt([camera.eye[0], camera.eye[1], camera.eye[2]],
             [camera.at[0], camera.at[1], camera.at[2]], 
