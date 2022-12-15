@@ -8,7 +8,7 @@ CGI university subject project 3
 - Different lighting models (point light, directional light, spot light)
 - Material properties (ambient, diffuse, specular)
 - Camera movement and zoom
-- Object manipulation (translation, rotation)
+- Object manipulation
 - Depth test and backface culling
 
 ## Dependencies
@@ -17,7 +17,7 @@ CGI university subject project 3
 - dat.gui
 
 ## Usage
-  To use the application, download the project files and open the index.html file in a web browser. The application will load and you can begin exploring the objects and lighting. Use the controls in the top-right corner to manipulate the camera and objects, and use the controls in the top-left corner to adjust the lighting and materials.
+  To use the application, download the project files and open the index.html file in a web browser. The application will load and you can begin exploring the objects and lighting. Use the controls in the top-right corner to manipulate the camera, objects and to adjust the lighting and materials.
 
 ## Screenshots
 
