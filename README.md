@@ -21,4 +21,6 @@ CGI university subject project 3
 
 ## Screenshots
 
-![Sample image](/P3.png)
+![Sample image](images/P3.png)
+
+![Sample image](images/P3-2.png)
