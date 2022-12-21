@@ -1,6 +1,6 @@
 import {buildProgramFromSources, loadShadersFromURLS, setupWebGL} from "./libs/utils.js";
-import {perspective, lookAt, flatten, vec2, vec3, rotateX, rotateY, rotateZ, mult, normalMatrix} from "./libs/MV.js";
-import {modelView, loadMatrix, multScale, multTranslation, popMatrix, pushMatrix} from "./libs/stack.js";
+import {perspective, lookAt, flatten, vec2, vec3, vec4, rotateX, rotateY, rotateZ, mult, normalMatrix, inverse} from "./libs/MV.js";
+import {modelView, loadMatrix, multScale, multTranslation, popMatrix, pushMatrix, multRotationX, multRotationY, multRotationZ} from "./libs/stack.js";
 
 import * as SPHERE from './libs/objects/sphere.js';
 import * as CUBE from './libs/objects/cube.js';
@@ -11,7 +11,6 @@ import * as TORUS from './libs/objects/torus.js';
 import { GUI } from './libs/dat.gui.module.js';
 
 /** @type WebGLRenderingContext */
-
 //Constants
 
 //Platform measurements
@@ -35,7 +34,7 @@ const TORUS_COLOR = vec3(250.0, 200.0, 200.0); //Salmon
 //Adjust natural camera movement
 const MVIEW_LIM = 0.25;
 //Rotation angle limit
-const CAM_SPINS = 1;
+const CAM_SPINS = 2;
 const ROT_LIM = CAM_SPINS * 180; // 180 means one spin (rotation from -180 to 180)
 //Sensivity factor Attenuant
 const SENSE_FACTOR = 45;
@@ -45,12 +44,21 @@ let gl;
 let mouseIsDragging = false;
 let mView;
 let initMousePos = vec2(0.0);
+let mModel;
+let pointView;
+let posCamera;
+let atCamera;
+let firstPerson = false;
+let openned = false;
+let x = 0;
+let y = 0;
+let z = 0;
 
 let options = {
     Mode : NaN,
     DepthTest : true,
     BackfaceCulling : true,
-    mouseSensivity : 2,
+    mouseSensivity : 2
 }
 
 let camera = {
@@ -110,7 +118,7 @@ let material = {
     Ka : [150,150,150],
     Kd : [150,150,150],
     Ks : [200,200,200],
-    shininess : 75.0,
+    shininess : 75.0
 }
 
 let matSamples = [
@@ -126,26 +134,33 @@ let matSamples = [
     Ka: [150,50,50],
     Kd: [150,50,50],
     Ks: [200,200,200],
-    shininess : 25.0,
+    shininess : 25.0
     },
     //Green material
     {
     Ka: [50,150,50],
     Kd: [50,150,50],
     Ks: [200,200,200],
-    shininess : 100.0,
+    shininess : 100.0
     },
     //Blue material
     {
     Ka: [50,50,150],
     Kd: [50,50,150],
     Ks: [200,200,200],
-    shininess : 50.0,
+    shininess : 50.0
     }
 ];
 
+let moveCam = { 
+    move:function() {
+        firstPerson = !firstPerson;
+    }
+};
+
 let resetCam = { 
     reset:function() {
+        firstPerson = false;
         camera.Agility = CAM_SPINS;
         camera.Gama = 0;
         camera.Theta = 0;
@@ -187,7 +202,6 @@ function setup(shaders)
     optionsFolder.add(options, 'mouseSensivity', 1, 4).name('Mouse Sensivity').listen();
     var mode = optionsFolder.add(options, 'Mode', {Lines: 'gl.LINES', Solid: 'gl.TRIANGLES'}).setValue('gl.TRIANGLES');
     options.Mode = gl.TRIANGLES;
-    optionsFolder.open();
 
     //Camera
     const camOptFolder = gui.addFolder('Camera');
@@ -215,7 +229,9 @@ function setup(shaders)
     upCam.add(camera.up, 1, -1, 1, 0.01).name('y').listen();
     upCam.add(camera.up, 2, -1, 1, 0.01).name('z').listen();
 
+    camOptFolder.add(moveCam, 'move').name('Moving Camera (f)');
     camOptFolder.add(resetCam, 'reset').name('Reset Values');
+    
 
     // Lights
     const lightsOptFolder = gui.addFolder('Lights');
@@ -330,6 +346,156 @@ function setup(shaders)
         else
             gl.disable(gl.CULL_FACE);
     });
+
+    document.onkeydown = function(event) {
+        switch(event.key) {
+            case "f":
+                firstPerson = !firstPerson;
+            break;
+        }
+    };
+
+    let wPressed = false;
+    let aPressed = false;
+    let sPressed = false;
+    let dPressed = false;
+    let upPressed = false;
+    let downPressed = false;
+
+    window.addEventListener('keydown', function(event) {
+        if (event.key === 'w') {
+            wPressed = true;
+        }
+        if (event.key === 'a') {
+            aPressed = true;
+        }
+        if (event.key === 's') {
+            sPressed = true;
+        }
+        if (event.key === 'd') {
+            dPressed = true;
+        }
+        if (event.key === 'ArrowUp') {
+            upPressed = true;
+        }
+        if (event.key === 'ArrowDown') {
+            downPressed = true;
+        }
+        if (event.key === 'r') {
+            resetCam.reset();
+        }
+        if (event.key === 'o') { //Toggle open folders
+            if(!openned) {
+                for (const folderName in gui.__folders) {
+                    gui.__folders[folderName].open();
+                }
+                openned = true;
+            } else {
+                for (const folderName in gui.__folders) {
+                    gui.__folders[folderName].close();
+                }
+                openned = false;
+            }
+        }
+        if (event.key === 'c') { //Toggle open camera folder
+            if(!openned) {
+                for (const folderName in gui.__folders) {
+                    if (folderName === "Camera")
+                      gui.__folders[folderName].open();
+                    else
+                      gui.__folders[folderName].close();
+                  }
+                openned = true;
+            } else {
+                for (const folderName in gui.__folders) {
+                    gui.__folders[folderName].close();
+                }
+                openned = false;
+            }
+        }
+        if (event.key === 'l') { //Toggle open lights folder and subfolders
+            if(!openned) {
+                for (const folderName in gui.__folders) {
+                    if (folderName === "Lights") {
+                      gui.__folders[folderName].open();
+                      for (const subFolder in gui.__folders[folderName].__folders) {
+                        gui.__folders[folderName].__folders[subFolder].open();
+                      }
+                    }
+                }
+                openned = true;
+            } else {
+                for (const folderName in gui.__folders)
+                    gui.__folders[folderName].close();
+                openned = false;
+            }
+        }
+        if (event.key === 'm') { //Toggle open material folder
+            if(!openned) {
+                for (const folderName in gui.__folders) {
+                    if (folderName === "Material")
+                      gui.__folders[folderName].open();
+                    else
+                      gui.__folders[folderName].close();
+                  }
+                openned = true;
+            } else {
+                for (const folderName in gui.__folders) {
+                    gui.__folders[folderName].close();
+                }
+                openned = false;
+            }
+        }
+        if (event.key === 'q') { //Zoom out
+            camera.Zoom /= 1.05;
+        }
+        if (event.key === 'e') { //Zoom in
+            camera.Zoom *= 1.05;
+        }
+    });
+
+    window.addEventListener('keyup', function(event) {
+        if (event.key === 'w') {
+            wPressed = false;
+        }
+        if (event.key === 'a') {
+            aPressed = false;
+        }
+        if (event.key === 's') {
+            sPressed = false;
+        }
+        if (event.key === 'd') {
+            dPressed = false;
+        }
+        if (event.key === 'ArrowUp') {
+            upPressed = false;
+        }
+        if (event.key === 'ArrowDown') {
+            downPressed = false;
+        }
+    });
+
+    // Update the position based on the keys being pressed
+    function updatePosition() {
+    if (wPressed) {
+        z += 0.01;
+    }
+    if (aPressed) {
+        x += 0.01;
+    }
+    if (sPressed) {
+        z -= 0.01;
+    }
+    if (dPressed) {
+        x -= 0.01;
+    }
+    if (upPressed) {
+        y += 0.01;
+    }
+    if (downPressed) {
+        y -= 0.01;
+    }
+    };
 
     function getCursorPosition(canvas, event) 
     {
@@ -452,6 +618,18 @@ function setup(shaders)
         popMatrix();
     }
 
+    function FPSCamera()
+    {
+        pushMatrix();
+            multTranslation([x, DEFAULT_SIZE + y, z]);
+            multRotationX(camera.Theta);
+            multRotationY(camera.Gama);
+            multRotationZ(camera.Theta);
+            uploadModelView();
+            pointView = modelView();
+        popMatrix();
+    }
+
     function World()
     {
         Platform();
@@ -459,22 +637,31 @@ function setup(shaders)
         Cube();
         Cylinder();
         Torus();
+        FPSCamera();
     }
 
     function render()
     {
         mProjection = perspective(camera.Fovy, aspect, camera.Near, camera.Far);
-        
-        if(mView[0][0] < MVIEW_LIM || mView[0][0] > -MVIEW_LIM) { //So that the rotation feels natural
-            mView = mult(lookAt([camera.eye[0], camera.eye[1], camera.eye[2]],
-            [camera.at[0], camera.at[1], camera.at[2]], 
-            [camera.up[0], camera.up[1], camera.up[2]]),
-            mult(rotateZ(camera.Theta), rotateY(camera.Gama)));
+        if(firstPerson){
+            updatePosition();
+            mModel = mult(inverse(mView), pointView);
+            posCamera = mult(mModel, vec4(0.0,0.0,0.0,1.0));
+            atCamera = mult(mModel, vec4(0.0,0.0,2.0,1.0));
+            mView = lookAt([posCamera[0], posCamera[1], posCamera[2]],
+                [atCamera[0], atCamera[1], atCamera[2]], [0,1,0]);
         } else {
-            mView = mult(lookAt([camera.eye[0], camera.eye[1], camera.eye[2]],
+            if(mView[0][0] < MVIEW_LIM || mView[0][0] > -MVIEW_LIM) { //So that the rotation feels natural
+                mView = mult(lookAt([camera.eye[0], camera.eye[1], camera.eye[2]],
                 [camera.at[0], camera.at[1], camera.at[2]], 
                 [camera.up[0], camera.up[1], camera.up[2]]),
-                mult(rotateY(camera.Gama), rotateX(camera.Theta)));
+                mult(rotateZ(camera.Theta), rotateY(camera.Gama)));
+            } else {
+                mView = mult(lookAt([camera.eye[0], camera.eye[1], camera.eye[2]],
+                    [camera.at[0], camera.at[1], camera.at[2]], 
+                    [camera.up[0], camera.up[1], camera.up[2]]),
+                    mult(rotateY(camera.Gama), rotateX(camera.Theta)));
+            }
         }
 
         window.requestAnimationFrame(render);
