@@ -1,0 +1,32 @@
+body, html {
+    height: 100%;
+}
+body {
+    /*display: flex;*/
+    margin: 0px;
+    overflow: hidden; /*  Disable scrollbars */
+    background-color: black;
+}
+button {
+    margin: 3px;
+    padding: 5px 10px;
+    font-size: 15px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    outline: none;
+    color: #fff;
+    background-color: rgb(255, 127.5, 80);
+    border: none;
+    border-radius: 15px;
+  }
+  
+  button:hover {
+    background-color: rgb(240, 80, 22)
+  }
+  
+  button:active {
+    background-color: rgb(240, 80, 22);
+    transform: translateY(3px);
+  }
+  
